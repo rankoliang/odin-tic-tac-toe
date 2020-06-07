@@ -4,11 +4,20 @@ class Board
   attr_reader :board
 
   def initialize(board_size)
-    self.board = Array.new(board_size, Array.new(board_size, 0))
+    self.board = []
+    board_size.times { board.push(Array.new(board_size, 0)) }
   end
 
   def display
     board.each { |row| p row }
+  end
+
+  def update_board(x, y, id)
+    board[x][y] = id
+  end
+
+  def to_s
+    board.to_s
   end
 
   private
@@ -19,14 +28,53 @@ end
 class Player
   attr_reader :name, :id
 
-  def initialize(id, name)
+  def initialize(id, name = "Player #{id}")
     self.id = id
     self.name = name
   end
 
-  private
+  def to_s
+    name
+  end
+
+  def take_turn
+    print "#{self}'s turn. Input your move in the format x y: "
+    yield gets.chomp.split.map(&:to_i)
+  end
+
+  protected
 
   attr_writer :name, :id
 end
 
-Board.new(3).display
+class TicTacToeGame < Board
+  attr_reader :players
+
+  def initialize(board_size = 3, num_players = 2)
+    super(board_size)
+    self.players = []
+    num_players.times do |player_id|
+      players.push Player.new(player_id + 1)
+    end
+  end
+
+  def play
+    winner = nil
+    until winner
+      players.each do |player|
+        player.take_turn do |x, y|
+          update_board(x, y, player.id)
+          display
+        end
+      end
+    end
+  end
+
+  protected
+
+  attr_writer :players, :board
+end
+
+game = TicTacToeGame.new
+
+game.play
