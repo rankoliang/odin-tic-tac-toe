@@ -17,16 +17,16 @@ class Board
 end
 
 class Player
-  attr_reader :name, :symbol
+  attr_reader :name, :id
 
-  def initialize(name, symbol)
+  def initialize(id, name)
+    self.id = id
     self.name = name
-    self.symbol = symbol
   end
 
   private
 
-  attr_writer :name, :symbol
+  attr_writer :name, :id
 end
 
 Board.new(3).display
