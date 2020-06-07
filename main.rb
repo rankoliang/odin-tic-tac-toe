@@ -9,17 +9,25 @@ class Board
   end
 
   def display
-    puts "   #{y_labels.join('  ')}  y"
+    puts "   #{y_labels.join('  ')}  x"
     board.each_with_index { |row, i| puts "#{i} #{row} |" }
-    puts 'x -----------'
+    puts "y #{'-' * (3 * board.size + 1)}"
   end
 
   def update_board(x, y, id)
-    board[x][y] = id
+    board[y][x] = id
   end
 
   def to_s
     board.to_s
+  end
+
+  def space_is_occupied?(x, y)
+    board[y][x] != 0
+  end
+
+  def size
+    board.size
   end
 
   private
@@ -43,9 +51,22 @@ class Player
     name
   end
 
-  def take_turn
-    print "#{self}'s turn. Input your move in the format x y: "
-    yield gets.chomp.split.map(&:to_i)
+  def take_turn(board)
+    loop do
+      print "#{self}'s turn. Input your move in the format x y: "
+      input = gets.chomp
+      if /^ *[0-#{board.size}] *[0-#{board.size}] *$/.match? input
+        space = input.split.map(&:to_i)
+        if !board.space_is_occupied?(*space)
+          yield space
+          break
+        else
+          puts 'Space is occupied!'
+        end
+      else
+        puts 'Invalid input!'
+      end
+    end
   end
 
   protected
@@ -68,7 +89,7 @@ class TicTacToeGame < Board
     winner = nil
     until winner
       players.each do |player|
-        player.take_turn do |x, y|
+        player.take_turn(self) do |x, y|
           update_board(x, y, player.id)
           display
         end
