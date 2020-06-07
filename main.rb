@@ -1,5 +1,25 @@
 # frozen_string_literal: true
 
+class WinnerFound < StandardError
+end
+
+# Changes display functionality to use symbols instead of numbers
+module DisplayMap
+  @@DISPLAY_MAP = ['-', 'O', 'X']
+
+  def display
+    puts "  #{y_labels.join(' ')} x"
+    board.each_with_index { |row, i| puts "#{i} #{row.map { |value| @@DISPLAY_MAP[value] }.join(' ')} |" }
+    puts "y #{'-' * (2 * board.size)}"
+  end
+
+  private
+
+  def y_labels
+    Array(0...board.size)
+  end
+end
+
 class Board
   attr_reader :board
 
@@ -8,26 +28,27 @@ class Board
     board_size.times { board.push(Array.new(board_size, 0)) }
   end
 
+  # Displays the board
   def display
     puts "   #{y_labels.join('  ')}  x"
     board.each_with_index { |row, i| puts "#{i} #{row} |" }
     puts "y #{'-' * (3 * board.size + 1)}"
   end
 
-  def update_board(x, y, id)
-    board[y][x] = id
-  end
-
   def to_s
     board.to_s
   end
 
-  def space_is_occupied?(x, y)
-    board[y][x] != 0
-  end
-
   def size
     board.size
+  end
+
+  protected
+
+  # returns the board diagonals
+  def diagonals
+    [board.map.with_index { |row, i| row[i] },
+     board.map.with_index { |row, i| row[row.size - i - 1] }]
   end
 
   private
@@ -51,11 +72,12 @@ class Player
     name
   end
 
+  # Takes input from the player until valid and returns the coordinates
   def take_turn(board)
     loop do
       print "#{self}'s turn. Input your move in the format x y: "
       input = gets.chomp
-      if /^ *[0-#{board.size}] *[0-#{board.size}] *$/.match? input
+      if /^ *[0-#{board.size - 1}] *[0-#{board.size - 1}] *$/.match? input
         space = input.split.map(&:to_i)
         if !board.space_is_occupied?(*space)
           yield space
@@ -77,6 +99,8 @@ end
 class TicTacToeGame < Board
   attr_reader :players
 
+  include DisplayMap
+
   def initialize(board_size = 3, num_players = 2)
     super(board_size)
     self.players = []
@@ -85,16 +109,46 @@ class TicTacToeGame < Board
     end
   end
 
+  # Starts the game loop
   def play
     winner = nil
-    until winner
-      players.each do |player|
-        player.take_turn(self) do |x, y|
-          update_board(x, y, player.id)
-          display
+    begin
+      until winner
+        players.each do |player|
+          player.take_turn(self) do |x, y|
+            update(x, y, player.id)
+            display
+            winning_id = check_winner
+            if winning_id
+              winner = winning_id
+              raise WinnerFound
+            end
+          end
         end
       end
+    rescue WinnerFound
+      puts "The winner is #{players[winner - 1]}"
     end
+  end
+
+  # Checks if the rows, columns, and diagonals are filled with the same element
+  # and returns a winner if there is one
+  def check_winner
+    row_filled_with = ->(row) { row.reduce(row[0]) { |acc, elem| acc if elem == acc } }
+    winners = [board, board.transpose, diagonals].map do |board_version|
+      board_version.map(&row_filled_with).find { |row| row && row != 0}
+    end
+    winners.find { |row| row }
+  end
+
+  def space_is_occupied?(x, y)
+    board[y][x] != 0
+  end
+
+  private
+
+  def update(x, y, id)
+    board[y][x] = id
   end
 
   protected
