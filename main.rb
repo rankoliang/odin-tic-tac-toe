@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
-class WinnerFound < StandardError
+class ResultFound < StandardError
+end
+
+class WinnerFound < ResultFound
+end
+
+class GameTie < ResultFound
 end
 
 # Changes display functionality to use symbols instead of numbers
@@ -123,11 +129,14 @@ class TicTacToeGame < Board
               winner = winning_id
               raise WinnerFound
             end
+            raise GameTie if board.flatten.none? { |element| element.nil? || element.zero? }
           end
         end
       end
     rescue WinnerFound
       puts "The winner is #{players[winner - 1]}"
+    rescue GameTie
+      puts 'The game is a tie'
     end
   end
 
@@ -136,7 +145,7 @@ class TicTacToeGame < Board
   def check_winner
     row_filled_with = ->(row) { row.reduce(row[0]) { |acc, elem| acc if elem == acc } }
     winners = [board, board.transpose, diagonals].map do |board_version|
-      board_version.map(&row_filled_with).find { |row| row && row != 0}
+      board_version.map(&row_filled_with).find { |row| row && row != 0 }
     end
     winners.find { |row| row }
   end
