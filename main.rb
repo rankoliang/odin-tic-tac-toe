@@ -9,7 +9,9 @@ class Board
   end
 
   def display
-    board.each { |row| p row }
+    puts "   #{y_labels.join('  ')}  y"
+    board.each_with_index { |row, i| puts "#{i} #{row} |" }
+    puts 'x -----------'
   end
 
   def update_board(x, y, id)
@@ -23,6 +25,10 @@ class Board
   private
 
   attr_writer :board
+
+  def y_labels
+    Array(0...board.size)
+  end
 end
 
 class Player
@@ -76,5 +82,5 @@ class TicTacToeGame < Board
 end
 
 game = TicTacToeGame.new
-
+game.display
 game.play
