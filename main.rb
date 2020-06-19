@@ -79,10 +79,12 @@ class Player
   end
 
   # Takes input from the player until valid and returns the coordinates
-  def take_turn(board)
+  def take_turn(board, move: move)
     loop do
-      print "#{self}'s turn. Input your move in the format x y: "
-      input = gets.chomp
+      print "#{self}'s turn. Input your move in the format x y: " unless move
+
+      input = move ? move.join(' ') : gets.chomp
+
       if /^ *[0-#{board.size - 1}] *[0-#{board.size - 1}] *$/.match? input
         space = input.split.map(&:to_i)
         if !board.space_is_occupied?(*space)
@@ -143,9 +145,9 @@ class TicTacToeGame < Board
   # Checks if the rows, columns, and diagonals are filled with the same element
   # and returns a winner if there is one
   def check_winner
-    row_filled_with = ->(row) { row.reduce(row[0]) { |acc, elem| acc if elem == acc } }
+    row_filled_with_same_element = ->(row) { row.reduce(row[0]) { |acc, elem| acc if elem == acc } }
     winners = [board, board.transpose, diagonals].map do |board_version|
-      board_version.map(&row_filled_with).find { |row| row && row != 0 }
+      board_version.map(&row_filled_with_same_element).find { |row| row && row != 0 }
     end
     winners.find { |row| row }
   end
@@ -153,8 +155,6 @@ class TicTacToeGame < Board
   def space_is_occupied?(x, y)
     board[y][x] != 0
   end
-
-  private
 
   def update(x, y, id)
     board[y][x] = id
@@ -165,6 +165,6 @@ class TicTacToeGame < Board
   attr_writer :players, :board
 end
 
-game = TicTacToeGame.new
-game.display
-game.play
+# game = TicTacToeGame.new
+# game.display
+# game.play
